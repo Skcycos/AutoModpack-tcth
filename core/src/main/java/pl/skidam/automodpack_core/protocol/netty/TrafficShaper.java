@@ -9,6 +9,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import io.netty.handler.traffic.GlobalTrafficShapingHandler;
 
 public class TrafficShaper {
+	private static final long BYTES_PER_MEGABIT = 1024L * 1024L / 8L;
 
 	private final GlobalTrafficShapingHandler trafficShapingHandler;
 	private ScheduledExecutorService executor = null;
@@ -21,14 +22,36 @@ public class TrafficShaper {
 			this.executor = executor;
 		}
 
-		long bandwidthLimit = serverConfig.bandwidthLimit * 1024L * 1024L / 8L;
-		if (bandwidthLimit < 0) {
+		long bandwidthLimitMbps = configuredBandwidthLimitMbps();
+		long bandwidthLimit = bandwidthLimitMbps * BYTES_PER_MEGABIT;
+		if (bandwidthLimitMbps < 0) {
 			bandwidthLimit = 0;
-			LOGGER.warn("Invalid configured bandwidth limit ({} Mbps). Setting effective limit to 0 (unlimited).", serverConfig.bandwidthLimit);
-		} else if (bandwidthLimit > 0) { LOGGER.info("Setting bandwidth limit to {} Mbps.", serverConfig.bandwidthLimit); }
+			LOGGER.warn("Invalid configured bandwidth limit ({} Mbps). Setting effective limit to 0 (unlimited).", bandwidthLimitMbps);
+		} else if (bandwidthLimitMbps > 0) {
+			LOGGER.info("Setting global server bandwidth limit to {} Mbps.", bandwidthLimitMbps);
+		}
 
 		this.trafficShapingHandler = new GlobalTrafficShapingHandler(executor, bandwidthLimit, 0);
 		TrafficShaper.trafficShaper = this;
+	}
+
+	/**
+	 * Returns the configured aggregate server upload limit. The legacy bandwidthLimit remains a
+	 * fallback so existing server configurations keep working.
+	 */
+	static int configuredBandwidthLimitMbps() {
+		if (serverConfig == null) return 0;
+		if (isNeoForge1211() && serverConfig.globalBandwidthLimit != 0) return serverConfig.globalBandwidthLimit;
+		return serverConfig.bandwidthLimit;
+	}
+
+	static long configuredBandwidthLimitBytesPerSecond() {
+		return Math.max(0L, configuredBandwidthLimitMbps()) * BYTES_PER_MEGABIT;
+	}
+
+	static boolean isNeoForge1211() {
+		return "1.21.1".equals(pl.skidam.automodpack_core.Constants.MC_VERSION)
+				&& "neoforge".equalsIgnoreCase(pl.skidam.automodpack_core.Constants.LOADER);
 	}
 
 	public GlobalTrafficShapingHandler getTrafficShapingHandler() {

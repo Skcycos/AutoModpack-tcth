@@ -25,6 +25,7 @@ import io.netty.util.ReferenceCountUtil;
 
 import pl.skidam.automodpack_core.protocol.compression.CompressionType;
 import pl.skidam.automodpack_core.protocol.netty.NettyServer;
+import pl.skidam.automodpack_core.protocol.netty.TrafficShaper;
 import pl.skidam.automodpack_core.protocol.netty.handler.CompressionDecoder;
 import pl.skidam.automodpack_core.protocol.netty.handler.CompressionEncoder;
 import pl.skidam.automodpack_core.protocol.netty.handler.ConfigurationHandler;
@@ -134,6 +135,7 @@ public final class ServerHolepunchBridge {
 			channel.attr(NettyServer.CHUNK_SIZE).set(DEFAULT_CHUNK_SIZE);
 
 			channel.pipeline().addLast("error-printer-first", new ErrorPrinter());
+			if (TrafficShaper.trafficShaper != null) channel.pipeline().addLast("traffic-shaper", TrafficShaper.trafficShaper.getTrafficShapingHandler());
 			if (server.getSslCtx() != null) {
 				SslHandler sslHandler = server.getSslCtx().newHandler(channel.alloc());
 				sslHandler.handshakeFuture().addListener(future -> {

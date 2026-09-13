@@ -143,6 +143,11 @@ public class Jsons {
 		public String modpackName = "";
 		public boolean modpackHost = true;
 		public boolean generateModpackOnStart = true;
+		/**
+		 * For the NeoForge 1.21.1 target, acquire modpack files from the authenticated server
+		 * connection instead of external platform hosts.
+		 */
+		public boolean preferServerDownloads = false;
 		// Replaces V2's flat syncedFiles/allowEditsInFiles/overwriteEditableFiles/forceCopyFilesToStandardLocation.
 		// Key is the group id referenced by requires/breaksWith and by the client's saved selection.
 		public Map<String, GroupDeclaration> groups = Map.of("main", mainGroupDeclaration());
@@ -163,6 +168,11 @@ public class Jsons {
 		public boolean disableInternalTLS = false;
 		public ModpackConnectionMode connectionMode = ModpackConnectionMode.defaultFor(Constants.MC_VERSION, Constants.LOADER);
 		public boolean updateIpsOnEveryStart = false;
+		/**
+		 * For the NeoForge 1.21.1 target, aggregate upload limit shared by all AutoModpack clients,
+		 * in megabits per second. Zero means unlimited.
+		 */
+		public int globalBandwidthLimit = 0;
 		public int bandwidthLimit = 0;
 		public boolean validateSecrets = true;
 		public long secretLifetime = 336; // 336 hours = 14 days
@@ -246,6 +256,8 @@ public class Jsons {
 		public String loader = "";
 		public String loaderVersion = "";
 		public String mcVersion = "";
+		/** Whether the client should use the authenticated server connection for file acquisition. */
+		public boolean preferServerDownloads = false;
 		public Set<ModpackContentItem> list;
 		public Set<FileToDelete> nonModpackFilesToDelete = Set.of();
 		// Group id -> metadata. Each group's files are referenced by path into `list`, which stays the

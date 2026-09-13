@@ -208,6 +208,7 @@ public class ClientSelectionManager {
 		filtered.loader = content.loader;
 		filtered.loaderVersion = content.loaderVersion;
 		filtered.mcVersion = content.mcVersion;
+		filtered.preferServerDownloads = content.preferServerDownloads;
 		filtered.nonModpackFilesToDelete = content.nonModpackFilesToDelete;
 		filtered.groups = content.groups;
 		return filtered;

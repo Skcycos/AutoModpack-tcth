@@ -366,7 +366,8 @@ public class Commands {
 
 	private static boolean connectionRuntimeChanged(Jsons.ServerConfigFieldsV3 previous, Jsons.ServerConfigFieldsV3 current) {
 		return previous.connectionMode != current.connectionMode || previous.bindPort != current.bindPort || previous.modpackHost != current.modpackHost
-				|| previous.disableInternalTLS != current.disableInternalTLS || previous.bandwidthLimit != current.bandwidthLimit
+				|| previous.disableInternalTLS != current.disableInternalTLS || previous.globalBandwidthLimit != current.globalBandwidthLimit
+				|| previous.bandwidthLimit != current.bandwidthLimit
 				|| previous.updateIpsOnEveryStart != current.updateIpsOnEveryStart || !Objects.equals(previous.bindAddress, current.bindAddress);
 	}
 

@@ -243,4 +243,37 @@ class ModpackTest {
 		assertTrue(correct);
 	}
 
+	@Test
+	void serverDownloadPreferenceIsPublishedOnlyForNeoForge1211() {
+		Jsons.ServerConfigFieldsV3 previousServerConfig = Constants.serverConfig;
+		String previousMinecraftVersion = Constants.MC_VERSION;
+		String previousLoader = Constants.LOADER;
+		try {
+			Constants.serverConfig = new Jsons.ServerConfigFieldsV3();
+			Constants.serverConfig.autoExcludeUnnecessaryFiles = false;
+			Constants.serverConfig.preferServerDownloads = true;
+			Constants.MC_VERSION = "1.21.1";
+			Constants.LOADER = "neoforge";
+
+			ModpackContent content = new ModpackContent("ServerSourcePack", null, testFilesDir, new HashSet<>(), new HashSet<>(),
+					Set.of(), Set.of(), new ModpackExecutor().getExecutor());
+			assertTrue(content.create(null));
+			Jsons.ModpackContentFields manifest = ModpackContentTools.read(Constants.hostModpackContentFile);
+			assertNotNull(manifest);
+			assertTrue(manifest.preferServerDownloads);
+
+			Constants.MC_VERSION = "1.21.4";
+			ModpackContent otherVersion = new ModpackContent("OtherVersionPack", null, testFilesDir, new HashSet<>(), new HashSet<>(), Set.of(), Set.of(),
+					new ModpackExecutor().getExecutor());
+			assertTrue(otherVersion.create(null));
+			manifest = ModpackContentTools.read(Constants.hostModpackContentFile);
+			assertNotNull(manifest);
+			assertFalse(manifest.preferServerDownloads);
+		} finally {
+			Constants.serverConfig = previousServerConfig;
+			Constants.MC_VERSION = previousMinecraftVersion;
+			Constants.LOADER = previousLoader;
+		}
+	}
+
 }

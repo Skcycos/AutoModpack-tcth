@@ -12,11 +12,14 @@ This configuration file controls the behavior of the AutoModpack server-side com
 | `modpackName`                 | `""`            | The display name of the modpack shown in AutoModpack user interfaces. It does not determine pack identity or client storage paths.                |
 | `modpackHost`                 | `true`          | Enables AutoModpack's built-in connection handling. When false, connection information can still point clients to an externally handled endpoint. |
 | `generateModpackOnStart`      | `true`          | Automatically scans files and regenerates modpack metadata every time the server starts.                                                          |
+| `preferServerDownloads`       | `false`         | NeoForge 1.21.1 only: send modpack files over the authenticated AutoModpack connection and skip Modrinth/CurseForge lookup.                   |
 | `autoExcludeServerSideMods`   | `true`          | Automatically excludes mods marked as "Server Side Only" in their metadata.                                                                       |
 | `autoExcludeUnnecessaryFiles` | `true`          | Automatically skips syncing files that are empty, hidden, temporary, disabled, or backup files.                                                   |
 | `requireAutoModpackOnClient`  | `true`          | If true, players are kicked if they do not have AutoModpack installed.                                                                            |
 | `acceptedLoaders`             | `["<current>"]` | A list of modloaders allowed to connect (e.g., Fabric, Forge). Use with caution; most mods are loader-specific.                                   |
 | `selfUpdater`                 | `false`         | Enables AutoModpack to update its own jar file automatically when new version is published on modrinth.                                           |
+
+For NeoForge 1.21.1, set `preferServerDownloads` to `true` and regenerate the modpack (`/automodpack generate`) so the setting is included in the manifest sent to clients. The client then transfers files through the authenticated AutoModpack connection without querying Modrinth or CurseForge.
 
 ## File Synchronization
 
@@ -90,7 +93,8 @@ These settings control how the file server is exposed to the internet.
 | `bindPort`               | `-1`                                                       | Controls built-in TCP handling according to `connectionMode`; see the matrix below. Values unused by the selected mode are preserved.          |
 | `advertisedEndpointHost` | `""`                                                       | The public hostname/IP sent to clients as the download endpoint. Empty uses the connected hostname.                                            |
 | `advertisedEndpointPort` | `-1`                                                       | The public TCP port sent to clients as the download endpoint. -1 uses the connected port.                                                      |
-| `bandwidthLimit`         | `0`                                                        | Upload speed limit in Mbps (0 = unlimited).                                                                                                    |
+| `globalBandwidthLimit`   | `0`                                                        | NeoForge 1.21.1 only: aggregate upload limit shared by all AutoModpack clients, in Mbps (0 = unlimited). Takes precedence over `bandwidthLimit` when nonzero. |
+| `bandwidthLimit`         | `0`                                                        | Legacy aggregate upload limit in Mbps (0 = unlimited); used as the fallback when `globalBandwidthLimit` is unset.                              |
 | `disableInternalTLS`     | `false`                                                    | Disables only AutoModpack's server-side TLS termination. Clients always use TLS; an expert-provided terminator must forward decrypted traffic. |
 | `connectionMode`         | `HOLEPUNCH` on supported targets; `MAGIC_PACKET` otherwise | Selects the exact method advertised to clients and used by built-in handling. Modes do not fall back to one another.                           |
 | `updateIpsOnEveryStart`  | `false`                                                    | Updates advertisedEndpointHost on startup. Useful for dynamic residential IPs.                                                                 |
@@ -106,6 +110,8 @@ These settings control how the file server is exposed to the internet.
 | `DIRECT`       | Start no built-in listener. The advertised endpoint must be handled externally.                                   | Start a dedicated listener that expects TLS immediately.       |
 
 `HOLEPUNCH`, `MAGIC_PACKET`, and `DIRECT` are strict. A client uses only the advertised mode, and the server does not reinterpret a wrong-mode connection. Optional PROXY protocol metadata is accepted before dedicated `MAGIC_PACKET` and `DIRECT` connections, not on the shared Minecraft listener.
+
+For NeoForge 1.21.1, set `globalBandwidthLimit` to the total upload rate you want to share across all modpack clients, for example `{"globalBandwidthLimit": 50}` for approximately 50 Mbps. The same global limiter is used by HOLEPUNCH, MAGIC_PACKET, and dedicated listeners. `DIRECT` with an externally managed endpoint cannot be limited by AutoModpack itself.
 
 Setting `modpackHost` to `false` disables all built-in listeners and holepunch handling, but it does not suppress connection information sent to clients. This supports reverse proxies and separately hosted endpoints. AutoModpack cannot validate external routing from the Minecraft server process.
 

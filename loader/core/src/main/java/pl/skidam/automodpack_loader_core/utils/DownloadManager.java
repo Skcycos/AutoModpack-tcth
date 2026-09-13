@@ -283,7 +283,15 @@ public class DownloadManager {
 
 			try {
 				if (source != null && task.attempts < MAX_DOWNLOAD_ATTEMPTS * numberOfIndexes) {
-					httpDownloader.download(source, tempStoreFile, this::updateNetworkProgress);
+					if (source.provider() == DownloadSource.Provider.SERVER) {
+						if (downloadClient == null) {
+							task.lastFailureCategory = FailureCategory.REMOTE_SOURCE;
+							return false;
+						}
+						hostDownloadFile(hashPathPair, tempStoreFile, this::updateNetworkProgress);
+					} else {
+						httpDownloader.download(source, tempStoreFile, this::updateNetworkProgress);
+					}
 				} else if (downloadClient != null) {
 					hostDownloadFile(hashPathPair, tempStoreFile, this::updateNetworkProgress);
 				} else {

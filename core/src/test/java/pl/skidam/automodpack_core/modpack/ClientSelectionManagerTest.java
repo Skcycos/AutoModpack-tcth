@@ -156,6 +156,7 @@ class ClientSelectionManagerTest {
 		content.modpackName = "My Server";
 		content.mcVersion = "26.2";
 		content.loader = "fabric";
+		content.preferServerDownloads = true;
 		content.groups = groups("main", group(true, false, "/mods/core.jar"), "extras", group(false, false, "/mods/extra.jar"));
 		content.list = Set.of(item("/mods/core.jar"), item("/mods/extra.jar"));
 
@@ -168,6 +169,7 @@ class ClientSelectionManagerTest {
 		assertEquals("My Server", filtered.modpackName);
 		assertEquals("26.2", filtered.mcVersion);
 		assertEquals("fabric", filtered.loader);
+		assertTrue(filtered.preferServerDownloads);
 		// Groups are retained so the selection screen still works after a filtered download.
 		assertEquals(Set.of("main", "extras"), filtered.groups.keySet());
 	}

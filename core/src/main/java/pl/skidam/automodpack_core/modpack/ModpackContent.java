@@ -307,6 +307,10 @@ public class ModpackContent {
 			modpackContent.loader = LOADER;
 			modpackContent.modpackId = MODPACK_ID;
 			modpackContent.modpackName = MODPACK_NAME;
+			// Keep this opt-in isolated to the requested target. Other Minecraft versions retain
+			// the existing Modrinth/CurseForge-first acquisition flow.
+			modpackContent.preferServerDownloads = "1.21.1".equals(MC_VERSION) && "neoforge".equalsIgnoreCase(LOADER) && serverConfig != null
+					&& serverConfig.preferServerDownloads;
 			modpackContent.nonModpackFilesToDelete = nonModpackFilesToDelete;
 			modpackContent.groups = new LinkedHashMap<>(GROUP_FIELDS);
 

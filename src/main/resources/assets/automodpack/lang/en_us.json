@@ -28,6 +28,11 @@
   "automodpack.danger.confirm": "Download",
   "automodpack.danger.cancel": "Don't download",
 
+  "automodpack.danger.server": "食韵筑家Ⅲ-烟火长歌 provides a server modpack!",
+  "automodpack.danger.server.description": "Do you want to download it from the server?",
+  "automodpack.danger.server.secDescription": "Only download it if you trust this server!",
+  "automodpack.danger.server.thiDescription": "Malicious servers can provide mods with malware",
+
   "automodpack.changelog.view": "View changelogs",
   "automodpack.changelog.noChanges": "No changes found.",
   "automodpack.changelog.openPage": "Open project page",

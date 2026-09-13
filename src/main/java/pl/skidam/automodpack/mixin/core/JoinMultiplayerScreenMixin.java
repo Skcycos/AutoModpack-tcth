@@ -34,7 +34,14 @@ import com.llamalad7.mixinextras.sugar.Local;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.ObjectSelectionList;
+/*? if >=26.2 {*/
 import net.minecraft.client.gui.layouts.LinearLayout;
+/*?} else if >=1.21.1 && <1.21.2 {*/
+/*
+import net.minecraft.client.gui.layouts.EqualSpacingLayout;
+*//*?} else {*/
+import net.minecraft.client.gui.layouts.LinearLayout;
+/*?}*/
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.multiplayer.JoinMultiplayerScreen;
 import net.minecraft.client.gui.screens.multiplayer.ServerSelectionList;
@@ -63,7 +70,14 @@ public abstract class JoinMultiplayerScreenMixin extends Screen {
 	protected ServerSelectionList serverSelectionList;
 
 	@Unique
+	/*? if >=26.2 {*/
 	private LinearLayout automodpack$topRow;
+	/*?} else if >=1.21.1 && <1.21.2 {*/
+	/*
+	private EqualSpacingLayout automodpack$topRow;
+	*//*?} else {*/
+	private LinearLayout automodpack$topRow;
+	/*?}*/
 	/*? if >=26.2 {*/
 	@Unique
 	private final List<AbstractWidget> automodpack$vanillaRowButtons = new ArrayList<>();
@@ -77,10 +91,25 @@ public abstract class JoinMultiplayerScreenMixin extends Screen {
 		super(title);
 	}
 
+	/*? if >=26.2 {*/
 	// Captured before the layout is walked into widgets. ordinal = 1 is the top footer row (0 is the
 	// outer vertical footer, 2 the bottom row).
 	@Inject(method = "init", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/layouts/HeaderAndFooterLayout;visitWidgets(Ljava/util/function/Consumer;)V"))
 	private void automodpack$captureRow(CallbackInfo ci, @Local(ordinal = 1) LinearLayout topFooterButtons) {
+	/*?} else if >=1.21.1 && <1.21.2 {*/
+	/*
+	// NeoForge 1.21.1 uses a vertical LinearLayout containing two EqualSpacingLayout rows. The
+	// first row is the Join/Direct/Add button row and is still in scope before the outer layout is
+	// arranged.
+	@Inject(method = "init", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/layouts/LinearLayout;arrangeElements()V"))
+	private void automodpack$captureRow(CallbackInfo ci, @Local(ordinal = 0) EqualSpacingLayout topFooterButtons) {
+	*//*?} else {*/
+	/*
+	// Captured before the layout is walked into widgets. ordinal = 1 is the top footer row (0 is the
+	// outer vertical footer, 2 the bottom row).
+	@Inject(method = "init", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/layouts/HeaderAndFooterLayout;visitWidgets(Ljava/util/function/Consumer;)V"))
+	private void automodpack$captureRow(CallbackInfo ci, @Local(ordinal = 1) LinearLayout topFooterButtons) {
+	*//*?}*/
 		automodpack$topRow = topFooterButtons;
 
 		automodpack$groupsButton = Button.builder(VersionedText.translatable("automodpack.selection.button"), press -> {

@@ -80,6 +80,11 @@ public class ModpackUpdater implements AutoCloseable {
 		return serverModpackContent.modpackName;
 	}
 
+	public boolean isServerDownloadPreferred() {
+		return serverModpackContent != null && serverModpackContent.preferServerDownloads && "1.21.1".equals(serverModpackContent.mcVersion)
+				&& "neoforge".equalsIgnoreCase(serverModpackContent.loader);
+	}
+
 	public Set<Jsons.ModpackContentFields.ModpackContentItem> getModpackFileList() {
 		return serverModpackContent.list;
 	}
@@ -290,6 +295,8 @@ public class ModpackUpdater implements AutoCloseable {
 			// Don't download files which already exist
 			ModpackUtils.populateStoreFromCWD(filesToUpdate, cache);
 			var finalFilesToUpdate = ModpackUtils.identifyUncachedFiles(filesToUpdate);
+			boolean preferServerDownloads = preferServerDownloads();
+			if (preferServerDownloads) LOGGER.info("Server-first downloads enabled for NeoForge 1.21.1; skipping external platform lookup");
 
 			// FETCH
 			long startFetching = System.currentTimeMillis();
@@ -301,7 +308,7 @@ public class ModpackUpdater implements AutoCloseable {
 				String fileType = serverItem.type;
 
 				// Check if the file is mod, shaderpack or resourcepack is available to download from modrinth or curseforge
-				if (fileType.equals("mod") || fileType.equals("shader") || fileType.equals("resourcepack")) {
+				if (!preferServerDownloads && (fileType.equals("mod") || fileType.equals("shader") || fileType.equals("resourcepack"))) {
 					fetchDatas.add(new FetchManager.FetchData(serverItem.file, serverItem.sha1, serverItem.murmur, serverItem.size, fileType));
 				}
 			}
@@ -379,10 +386,7 @@ public class ModpackUpdater implements AutoCloseable {
 
 			Path downloadFile = SmartFileUtils.getPath(modpackDir, serverFilePath);
 
-			List<DownloadSource> sources = new ArrayList<>();
-			if (fetchManager != null && fetchManager.getFetchDatas().containsKey(serverFileHash)) {
-				sources.addAll(fetchManager.getFetchDatas().get(serverFileHash).fetchedData().sources());
-			}
+			List<DownloadSource> sources = getDownloadSources(serverFileHash, fetchManager);
 
 			Consumer<DownloadManager.FailureCategory> failureCallback = category -> {
 				failedDownloads.put(serverItem, sources.stream().map(DownloadSource::url).toList());
@@ -448,9 +452,10 @@ public class ModpackUpdater implements AutoCloseable {
 		if (refreshedFilesToAcquire.isEmpty()) return true;
 
 		List<FetchManager.FetchData> refreshedFetchData = new ArrayList<>();
+		boolean preferServerDownloads = preferServerDownloads();
 		for (var item : refreshedFilesToAcquire) {
 			totalBytesToDownload += Long.parseLong(item.size);
-			if (item.type.equals("mod") || item.type.equals("shader") || item.type.equals("resourcepack"))
+			if (!preferServerDownloads && (item.type.equals("mod") || item.type.equals("shader") || item.type.equals("resourcepack")))
 				refreshedFetchData.add(new FetchManager.FetchData(item.file, item.sha1, item.murmur, item.size, item.type));
 		}
 		FetchManager refreshedFetchManager = null;
@@ -466,9 +471,7 @@ public class ModpackUpdater implements AutoCloseable {
 
 		for (var serverItem : refreshedFilesToAcquire) {
 			Path downloadFile = SmartFileUtils.getPath(modpackDir, serverItem.file);
-			List<DownloadSource> sources = refreshedFetchManager != null && refreshedFetchManager.getFetchDatas().containsKey(serverItem.sha1)
-					? refreshedFetchManager.getFetchDatas().get(serverItem.sha1).fetchedData().sources()
-					: List.of();
+			List<DownloadSource> sources = getDownloadSources(serverItem.sha1, refreshedFetchManager);
 			Consumer<DownloadManager.FailureCategory> failureCallback = category -> {
 				failedDownloads.put(serverItem, sources.stream().map(DownloadSource::url).toList());
 				failedDownloadCategories.put(serverItem, category);
@@ -484,6 +487,18 @@ public class ModpackUpdater implements AutoCloseable {
 		downloadManager.cancelAllAndShutdown();
 		LOGGER.info("Finished full refreshed acquisition in {}ms", System.currentTimeMillis() - startFetching);
 		return failedDownloads.isEmpty();
+	}
+
+	private boolean preferServerDownloads() {
+		return isServerDownloadPreferred();
+	}
+
+	private List<DownloadSource> getDownloadSources(String sha1, @Nullable FetchManager fetchManager) {
+		List<DownloadSource> sources = new ArrayList<>();
+		if (preferServerDownloads()) sources.add(DownloadSource.server());
+		if (fetchManager != null && fetchManager.getFetchDatas().containsKey(sha1))
+			sources.addAll(fetchManager.getFetchDatas().get(sha1).fetchedData().sources());
+		return sources;
 	}
 
 	private void reportFailedDownloads(long start) {
@@ -565,9 +580,7 @@ public class ModpackUpdater implements AutoCloseable {
 		if (selection == null) return;
 		if (selection.previousManifest() != null && selection.previousManifest().list != null) for (var item : selection.previousManifest().list) {
 			if (!item.editable) continue;
-			UpdatePlan.FileKey key = "mod".equals(item.type)
-					? new UpdatePlan.FileKey(UpdatePlan.Root.MODS_DIR, Path.of(UpdatePlanner.normalize(item.file)).getFileName().toString())
-					: new UpdatePlan.FileKey(UpdatePlan.Root.GAME_DIR, UpdatePlanner.normalize(item.file));
+			UpdatePlan.FileKey key = UpdatePlanner.liveKey(item);
 			UpdatePlan.FileState state = files.get(key);
 			if (state == null || state.sha1() == null) continue;
 			Path source = key.root() == UpdatePlan.Root.MODS_DIR ? MODS_DIR.resolve(key.relativePath()) : SmartFileUtils.CWD.resolve(key.relativePath());
@@ -602,10 +615,13 @@ public class ModpackUpdater implements AutoCloseable {
 			}
 		}
 		Set<String> gamePaths = new HashSet<>();
-		if (target.list != null) target.list.stream().filter(item -> !"mod".equals(item.type)).forEach(item -> gamePaths.add(item.file));
-		if (installed != null && installed.list != null) installed.list.stream().filter(item -> !"mod".equals(item.type)).forEach(item -> gamePaths.add(item.file));
+		if (target.list != null) target.list.stream().filter(item -> UpdatePlanner.liveKey(item).root() == UpdatePlan.Root.GAME_DIR)
+				.forEach(item -> gamePaths.add(item.file));
+		if (installed != null && installed.list != null) installed.list.stream().filter(item -> UpdatePlanner.liveKey(item).root() == UpdatePlan.Root.GAME_DIR)
+				.forEach(item -> gamePaths.add(item.file));
 		if (selection != null && selection.previousManifest() != null && selection.previousManifest().list != null)
-			selection.previousManifest().list.stream().filter(item -> !"mod".equals(item.type)).forEach(item -> gamePaths.add(item.file));
+			selection.previousManifest().list.stream().filter(item -> UpdatePlanner.liveKey(item).root() == UpdatePlan.Root.GAME_DIR)
+					.forEach(item -> gamePaths.add(item.file));
 		for (String gamePath : gamePaths) {
 			Path path = SmartFileUtils.getPathFromCWD(gamePath);
 			if (Files.isRegularFile(path)) putFileState(files, UpdatePlan.Root.GAME_DIR, SmartFileUtils.CWD, path, cache);
@@ -723,7 +739,7 @@ public class ModpackUpdater implements AutoCloseable {
 			if (item == null) throw new IOException("Planned CAS object is unavailable: " + operation.expectedObjectHash());
 			Path source = SmartFileUtils.getPath(modpackDir, item.file);
 			if (!SmartFileUtils.isValidFile(source, operation.expectedSize(), operation.expectedObjectHash()))
-				source = "mod".equals(item.type)
+				source = UpdatePlanner.liveKey(item).root() == UpdatePlan.Root.MODS_DIR
 						? MODS_DIR.resolve(Path.of(UpdatePlanner.normalize(item.file)).getFileName())
 						: SmartFileUtils.getPathFromCWD(item.file);
 			if (!SmartFileUtils.isValidFile(source, operation.expectedSize(), operation.expectedObjectHash()))

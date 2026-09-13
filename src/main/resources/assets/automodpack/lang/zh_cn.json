@@ -15,6 +15,11 @@
   "automodpack.danger.confirm": "下载",
   "automodpack.danger.cancel": "不下载",
 
+  "automodpack.danger.server": "食韵筑家Ⅲ-烟火长歌服务器提供模组包！",
+  "automodpack.danger.server.description": "您要从服务器下载它吗？",
+  "automodpack.danger.server.secDescription": "请仅在您信任此服务器时下载！",
+  "automodpack.danger.server.thiDescription": "恶意服务器可能提供含有恶意软件的模组",
+
   "automodpack.changelog.view": "查看更新日志",
   "automodpack.changelog.noChanges": "未发现更改。",
   "automodpack.changelog.openPage": "打开项目页面",

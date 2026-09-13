@@ -114,6 +114,18 @@ class ConfigToolsTest {
 	}
 
 	@Test
+	void readsServerDownloadPreference() {
+		Jsons.ServerConfigFieldsV3 config = ConfigTools.parse("{\"preferServerDownloads\":true}", Jsons.ServerConfigFieldsV3.class);
+		assertTrue(config.preferServerDownloads);
+	}
+
+	@Test
+	void readsGlobalBandwidthLimit() {
+		Jsons.ServerConfigFieldsV3 config = ConfigTools.parse("{\"globalBandwidthLimit\":50}", Jsons.ServerConfigFieldsV3.class);
+		assertEquals(50, config.globalBandwidthLimit);
+	}
+
+	@Test
 	void connectionInfoCompletenessRequiresOriginAndEndpoint() {
 		Jsons.ConnectionInfo connectionInfo = new Jsons.ConnectionInfo();
 		assertFalse(connectionInfo.isComplete());

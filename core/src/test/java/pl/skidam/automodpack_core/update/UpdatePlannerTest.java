@@ -59,6 +59,22 @@ class UpdatePlannerTest {
 	}
 
 	@Test
+	void keepsDisabledModFilesInsideTheConstrainedModsRoot() {
+		String disabledHash = "5555555555555555555555555555555555555555";
+		Jsons.ModpackContentFields target = new Jsons.ModpackContentFields(Set.of(
+				new Jsons.ModpackContentFields.ModpackContentItem("/mods/disabled.jar.dis", "6", "other", false, false, false, disabledHash, "0")));
+		target.modpackId = "abc1234";
+		Map<FileKey, FileState> files = Map.of(
+				new FileKey(Root.MODPACK_DIR, "mods/disabled.jar.dis"), new FileState(disabledHash, 6, true, false),
+				new FileKey(Root.MODS_DIR, "disabled.jar.dis"), new FileState(disabledHash, 6, true, false));
+
+		UpdatePlan plan = UpdatePlanner.plan(input(target, files, true, List.of(), List.of()));
+
+		assertTrue(plan.projectedFinalState().stream().anyMatch(file -> file.root() == Root.MODS_DIR && file.relativePath().equals("disabled.jar.dis")));
+		assertFalse(plan.projectedFinalState().stream().anyMatch(file -> file.root() == Root.GAME_DIR && file.relativePath().equals("mods/disabled.jar.dis")));
+	}
+
+	@Test
 	void remoteDeletionOptOutAndHashMismatchProduceDeterministicSafeDecisions() {
 		Jsons.ModpackContentFields target = manifest();
 		Map<FileKey, FileState> mismatch = Map.of(new FileKey(Root.MODS_DIR, "old.jar"), new FileState(TARGET_HASH, 8, true, true));

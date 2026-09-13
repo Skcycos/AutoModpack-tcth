@@ -41,6 +41,11 @@ public class DangerScreen extends VersionedScreen {
 		new ScreenManager().title();
 	}
 
+	private String dangerTranslationKey(String suffix) {
+		String prefix = modpackUpdater.isServerDownloadPreferred() ? "automodpack.danger.server" : "automodpack.danger";
+		return prefix + suffix;
+	}
+
 	@Override
 	public void tick() {
 		super.tick();
@@ -56,19 +61,19 @@ public class DangerScreen extends VersionedScreen {
 		int lineHeight = 12; // Consistent line spacing
 
 		// Title
-		drawCenteredTextWithShadow(matrices, this.font, VersionedText.translatable("automodpack.danger").withStyle(ChatFormatting.BOLD), this.width / 2,
+		drawCenteredTextWithShadow(matrices, this.font, VersionedText.translatable(dangerTranslationKey("")).withStyle(ChatFormatting.BOLD), this.width / 2,
 				this.height / 2 - 60, TextColors.WHITE);
 
 		// Description line 1
-		drawCenteredTextWithShadow(matrices, this.font, VersionedText.translatable("automodpack.danger.description"), this.width / 2,
+		drawCenteredTextWithShadow(matrices, this.font, VersionedText.translatable(dangerTranslationKey(".description")), this.width / 2,
 				this.height / 2 - 60 + lineHeight * 3, TextColors.WHITE);
 
 		// Description line 2
-		drawCenteredTextWithShadow(matrices, this.font, VersionedText.translatable("automodpack.danger.secDescription"), this.width / 2,
+		drawCenteredTextWithShadow(matrices, this.font, VersionedText.translatable(dangerTranslationKey(".secDescription")), this.width / 2,
 				this.height / 2 - 60 + lineHeight * 4, TextColors.WHITE);
 
 		// Description line 3
-		drawCenteredTextWithShadow(matrices, this.font, VersionedText.translatable("automodpack.danger.thiDescription"), this.width / 2,
+		drawCenteredTextWithShadow(matrices, this.font, VersionedText.translatable(dangerTranslationKey(".thiDescription")), this.width / 2,
 				this.height / 2 - 60 + lineHeight * 5, TextColors.WHITE);
 	}
 

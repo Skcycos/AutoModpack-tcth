@@ -261,9 +261,12 @@ public final class UpdatePlanner {
 				}, LinkedHashMap::new));
 	}
 
-	private static FileKey liveKey(Jsons.ModpackContentFields.ModpackContentItem item) {
+	public static FileKey liveKey(Jsons.ModpackContentFields.ModpackContentItem item) {
 		String relative = normalize(item.file);
-		if ("mod".equals(item.type)) return new FileKey(Root.MODS_DIR, Path.of(relative).getFileName().toString());
+		// Disabled mod files (for example *.jar.dis) are emitted as "other" by
+		// the manifest generator, but they still live in the constrained mods root.
+		if ("mod".equals(item.type) || relative.startsWith("mods/"))
+			return new FileKey(Root.MODS_DIR, Path.of(relative).getFileName().toString());
 		return new FileKey(Root.GAME_DIR, relative);
 	}
 
